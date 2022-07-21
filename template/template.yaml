@@ -1,0 +1,12 @@
+# Date the data was recorded
+date: 2022-07-21
+# Supply voltage in volts
+vcc: 3.25
+# Measured load resistor value in ohms
+r_load: 2194
+# Measured sensing resistor value in ohms
+r_sense: 100
+# Gain settings, valid options are [10, 100]
+gain: 100
+# Ref Select setting, valid options are ["bidirectional", "unidirection"]
+ref: "unidirectional"
