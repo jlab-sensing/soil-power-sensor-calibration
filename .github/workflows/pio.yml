@@ -20,6 +20,9 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
+      - name: Change directory
+        run: cd teensy
+
       - name: Build PlatformIO Project
         run: pio run
 
