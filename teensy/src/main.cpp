@@ -4,6 +4,9 @@
  * Turns on an LED on for one second,
  * then off for one second, repeatedly.
  */
+
+#include <stdio.h>
+
 #include "Arduino.h"
 
 #ifndef LED_BUILTIN
@@ -12,6 +15,17 @@
 
 void setup()
 {
+
+	// Initialize serial
+	Serial.begin(9600);
+	while (!Serial);
+
+	// Bring debug string
+	char debug_str[256];
+	sprintf(debug_str, "Soil Power Sensor Calibration, compiled on %s, %s", __DATE__, __TIME__);
+	Serial.println(debug_str);
+
+
 	// initialize LED digital pin as an output.
 	pinMode(LED_BUILTIN, OUTPUT);
 }
