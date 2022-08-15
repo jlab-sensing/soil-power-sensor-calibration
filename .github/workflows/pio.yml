@@ -2,6 +2,10 @@ name: PlatformIO CI
 
 on: [push]
 
+defaults:
+  run:
+    working-directory: teensy
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,9 +23,6 @@ jobs:
           python-version: '3.9'
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
-
-      - name: Change directory
-        run: cd teensy
 
       - name: Build PlatformIO Project
         run: pio run
