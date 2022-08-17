@@ -16,6 +16,11 @@
 /** ADC input resolution */
 #define ADC_READ_RES 16
 
+/** ADC Effective number of bits due to noise */
+#define ADC_EFF_BITS 13
+
+#define ADC_EFF_MASK (0xFFFF << (ADC_READ_RES - ADC_EFF_BITS))
+
 /** Reference voltage for ADC */
 #define VREF 3.3
 
@@ -60,15 +65,22 @@ void setup()
 
 void loop()
 {
-	int adc_i = analogRead(PIN_I);
-	int adc_v = analogRead(PIN_V);
-
-	double i = conv_ADC(adc_i, VREF, ADC_READ_RES);
-	double v = conv_ADC(adc_v, VREF, ADC_READ_RES);
-
 	char meas[256];
 
-	sprintf(meas, "V: %f, I: %f", v, i);
+	// Read pins
+	int raw_i = analogRead(PIN_I);
+	int raw_v = analogRead(PIN_V);
+
+	// Mask to effective bits to remove ADC noise
+	int eff_i = raw_i & ADC_EFF_MASK;
+	int eff_v = raw_v & ADC_EFF_MASK;
+
+	// Conver to readings
+	double i = conv_ADC(eff_i, VREF, ADC_READ_RES);
+	double v = conv_ADC(eff_v, VREF, ADC_READ_RES);
+
+	// Print
+	sprintf(meas, "Eff V: %f, I: %f", v, i);
 	Serial.println(meas);
 	
 	// wait for a second
