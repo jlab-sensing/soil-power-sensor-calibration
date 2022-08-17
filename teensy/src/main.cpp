@@ -13,9 +13,33 @@
 #define LED_BUILTIN 13
 #endif
 
+/** ADC input resolution */
+#define ADC_READ_RES 16
+
+/** Reference voltage for ADC */
+#define VREF 3.3
+
+/** ADC Pin used for measuring current */
+#define PIN_I A14
+/** ADC Pin used for measuring voltage */
+#define PIN_V A15
+
+/**
+ * @brief Converts ADC reading to voltage based of reference voltage and ADC
+ * resolution
+ *
+ * @param val ADC Value
+ * @param ref Reference voltage
+ * @param res ADC Resolution
+ * @return Equivalent voltage
+ */
+inline double conv_ADC(int val, double ref, int res)
+{
+	return ((double) val / (1 << res)) * ref;
+}
+
 void setup()
 {
-
 	// Initialize serial
 	Serial.begin(9600);
 	while (!Serial);
@@ -25,22 +49,28 @@ void setup()
 	sprintf(debug_str, "Soil Power Sensor Calibration, compiled on %s, %s", __DATE__, __TIME__);
 	Serial.println(debug_str);
 
+	// Set ADC to 16 bits
+	analogReadResolution(ADC_READ_RES);
 
 	// initialize LED digital pin as an output.
 	pinMode(LED_BUILTIN, OUTPUT);
+	// turn the LED on (HIGH is the voltage level)
+	digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void loop()
 {
-	// turn the LED on (HIGH is the voltage level)
-	digitalWrite(LED_BUILTIN, HIGH);
+	int adc_i = analogRead(PIN_I);
+	int adc_v = analogRead(PIN_V);
 
-	// wait for a second
-	delay(1000);
+	double i = conv_ADC(adc_i, VREF, ADC_READ_RES);
+	double v = conv_ADC(adc_v, VREF, ADC_READ_RES);
 
-	// turn the LED off by making the voltage LOW
-	digitalWrite(LED_BUILTIN, LOW);
+	char meas[256];
 
+	sprintf(meas, "V: %f, I: %f", v, i);
+	Serial.println(meas);
+	
 	// wait for a second
 	delay(1000);
 }
