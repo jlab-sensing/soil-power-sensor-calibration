@@ -32,9 +32,18 @@
 /** Number of samples to average */
 #define NUM_SAMPLES 10000
 
+
+typedef struct {
+	/** Average of measurements */
+	double avg;
+	/** Number of samples */
+	unsigned int n;
+} meas_t;
+
+
 /**
  * @brief Converts ADC reading to voltage based of reference voltage and ADC
- * resolution
+ * resolution.
  *
  * @param val ADC Value
  * @param ref Reference voltage
@@ -45,6 +54,47 @@ inline double conv_ADC(int val, double ref, int res)
 {
 	return ((double) val / (1 << res)) * ref;
 }
+
+
+/**
+ * @brief Reads voltage from ADC channel
+ *
+ * The raw value is converted based on the reference voltage and the resolution
+ * of the ADC. A mask is applied to the read ADC value to reduce the number of
+ * specified by the settings. If n is 0 then the measurement is not averaged.
+ *
+ * @see ADC_READ_RES
+ * @see ADC_EFF_MASK
+ * @see VREF
+ *
+ * @param[in] pin Analog pin
+ * @param[in/out] meas Pointer to measurement
+ */
+void read_voltage(int pin, meas_t * meas)
+{
+		// Read pins
+		int raw = analogRead(pin);
+
+		// Mask to effective bits to remove ADC noise
+		int eff = raw & ADC_EFF_MASK;
+
+		// Convert to readings
+		double val = conv_ADC(eff, VREF, ADC_READ_RES);
+
+		// If on first iteration store directly in mean
+		if (meas->n == 0)
+		{
+			meas->avg = val;
+			++meas->n;
+		}
+		else
+		{
+			++meas->n;
+			meas->avg = (((double) meas->n) - 1.) / ((double) meas->n) * meas->avg;
+			meas->avg += (1. / (double) meas->n) * val;
+		}
+}
+
 
 void setup()
 {
@@ -70,45 +120,16 @@ void loop()
 {
 	char meas[256];
 
-	// Number of current samples
-	unsigned int n = 0;
+	meas_t i = {};
+	meas_t v = {};
 
-	// Mean current
-	double mean_i;
-	// Mean voltage
-	double mean_v;
-
-	while (n < NUM_SAMPLES)
+	while (i.n < NUM_SAMPLES)
 	{
-		// Read pins
-		int raw_i = analogRead(PIN_I);
-		int raw_v = analogRead(PIN_V);
-
-		// Mask to effective bits to remove ADC noise
-		int eff_i = raw_i & ADC_EFF_MASK;
-		int eff_v = raw_v & ADC_EFF_MASK;
-
-		// Convert to readings
-		double i = conv_ADC(eff_i, VREF, ADC_READ_RES);
-		double v = conv_ADC(eff_v, VREF, ADC_READ_RES);
-
-		// If on first iteration store directly in mean
-		if (n == 0)
-		{
-			mean_i = i;
-			mean_v = v;
-			++n;
-		}
-		else
-		{
-			++n;
-			mean_i = (((double) n) - 1.) / ((double) n) * mean_i + (1. / (double) n) * i;
-			mean_v = (((double) n) - 1.) / ((double) n) * mean_v + (1. / (double) n) * v;
-		}
+		read_voltage(PIN_I, &i);
+		read_voltage(PIN_V, &v);
 	}
 
-
 	// Print
-	sprintf(meas, "Eff V: %f, I: %f", mean_v, mean_i);
+	sprintf(meas, "Eff V: %f, I: %f", v.avg, i.avg);
 	Serial.println(meas);
 }
