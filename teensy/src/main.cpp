@@ -29,6 +29,9 @@
 /** ADC Pin used for measuring voltage */
 #define PIN_V A15
 
+/** Number of samples to average */
+#define NUM_SAMPLES 10000
+
 /**
  * @brief Converts ADC reading to voltage based of reference voltage and ADC
  * resolution
@@ -67,22 +70,45 @@ void loop()
 {
 	char meas[256];
 
-	// Read pins
-	int raw_i = analogRead(PIN_I);
-	int raw_v = analogRead(PIN_V);
+	// Number of current samples
+	unsigned int n = 0;
 
-	// Mask to effective bits to remove ADC noise
-	int eff_i = raw_i & ADC_EFF_MASK;
-	int eff_v = raw_v & ADC_EFF_MASK;
+	// Mean current
+	double mean_i;
+	// Mean voltage
+	double mean_v;
 
-	// Conver to readings
-	double i = conv_ADC(eff_i, VREF, ADC_READ_RES);
-	double v = conv_ADC(eff_v, VREF, ADC_READ_RES);
+	while (n < NUM_SAMPLES)
+	{
+		// Read pins
+		int raw_i = analogRead(PIN_I);
+		int raw_v = analogRead(PIN_V);
+
+		// Mask to effective bits to remove ADC noise
+		int eff_i = raw_i & ADC_EFF_MASK;
+		int eff_v = raw_v & ADC_EFF_MASK;
+
+		// Convert to readings
+		double i = conv_ADC(eff_i, VREF, ADC_READ_RES);
+		double v = conv_ADC(eff_v, VREF, ADC_READ_RES);
+
+		// If on first iteration store directly in mean
+		if (n == 0)
+		{
+			mean_i = i;
+			mean_v = v;
+			++n;
+		}
+		else
+		{
+			++n;
+			mean_i = (((double) n) - 1.) / ((double) n) * mean_i + (1. / (double) n) * i;
+			mean_v = (((double) n) - 1.) / ((double) n) * mean_v + (1. / (double) n) * v;
+		}
+	}
+
 
 	// Print
-	sprintf(meas, "Eff V: %f, I: %f", v, i);
+	sprintf(meas, "Eff V: %f, I: %f", mean_v, mean_i);
 	Serial.println(meas);
-	
-	// wait for a second
-	delay(1000);
 }
