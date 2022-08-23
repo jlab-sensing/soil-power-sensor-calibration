@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import pdb
+
 import time
 import argparse
 import serial
@@ -61,6 +63,8 @@ class TeensyController(SerialController):
         """
         self.ser.write(b"v\n")
         reply = self.ser.readline()
+        reply = reply.decode()
+        reply = reply.strip("\r\n")
         return float(reply)
 
     def get_current(self) -> float:
@@ -77,6 +81,8 @@ class TeensyController(SerialController):
         """
         self.ser.write(b"i\n")
         reply = self.ser.readline()
+        reply = reply.decode()
+        reply = reply.strip("\r\n")
         return float(reply)
 
     def check(self):
@@ -89,6 +95,8 @@ class TeensyController(SerialController):
         """
         self.ser.write(b"check\n")
         reply = self.ser.readline()
+        reply = reply.decode()
+        reply = reply.strip("\r\n")
         if (reply != "ok"):
             raise RuntimeError("Teensy check failed")
 
@@ -101,6 +109,25 @@ class SMUController(SerialController):
     through its RS232 port. Written for the Keithley 2400 SMU, but should work
     for any other SMU that uses SCPI.
     """
+
+    DEFAULT_VOLTAGE = 0
+
+    def __init__(self, port):
+        """Constructor
+
+        Opens serial port, restore to known defaults
+
+        Parameters
+        ----------
+        port : str
+            Serial port of device
+        """
+
+        super().__init__(self, port)
+        # Reset settings
+        self.ser.write(b"*RST")
+        self.ser.write(b"SOURC:FUNC VOLT")
+
 
     def get_voltage(self) -> float:
         """Measure voltage supplied to the SPS from SMU
@@ -152,15 +179,15 @@ if __name__ == "__main__":
     #smu = SMUController(args.smu_port)
 
     data = {
-        "V_in": [],
-        "I_in": [],
+        #"V_in": [],
+        #"I_in": [],
         "V_i": [],
         "V_2x": []
     }
 
     for v in np.arange(args.start, args.stop, args.step):
         # Set voltage
-        SMUController.set_voltage(v)
+        #smu.set_voltage(v)
         # Sleep for 1ms
         time.sleep(0.001)
 
@@ -169,8 +196,8 @@ if __name__ == "__main__":
         #data["I_in"] = SMUController.get_current()
 
         # Measure SPS output
-        data["V_i"] = teensy.get_voltage()
-        data["V_2x"] = teensy.get_current()
+        data["V_i"].append(teensy.get_voltage())
+        data["V_2x"].append(teensy.get_current())
 
     data_df = pd.DataFrame(data)
-    data_df.to_csv(args.data_file)
+    data_df.to_csv(args.data_file, index=False)
