@@ -49,6 +49,8 @@ fastjsonschema==2.16.1
     # via nbformat
 fonttools==4.34.4
     # via matplotlib
+future==0.18.2
+    # via serial
 idna==3.3
     # via
     #   anyio
@@ -65,6 +67,8 @@ ipython-genutils==0.2.0
     # via
     #   nbclassic
     #   notebook
+iso8601==1.0.2
+    # via serial
 jedi==0.18.1
     # via ipython
 jinja2==3.1.2
@@ -212,6 +216,8 @@ pytz==2022.1
     # via
     #   babel
     #   pandas
+pyyaml==6.0
+    # via serial
 pyzmq==23.2.0
     # via
     #   ipykernel
@@ -226,6 +232,8 @@ send2trash==1.8.0
     #   jupyter-server
     #   nbclassic
     #   notebook
+serial==0.0.97
+    # via -r requirements.in
 six==1.16.0
     # via
     #   asttokens
