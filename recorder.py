@@ -38,6 +38,19 @@ class SerialController:
 class TeensyController(SerialController):
     """Controller for the teensy firmware used to read values from the SPS"""
 
+    def __init__(self, port):
+        """Constructor
+
+        Opens serial connection and checks functionality
+
+        Parameters
+        ----------
+        port : str
+            Serial port of device
+        """
+        super().__init__(port)
+        self.check()
+
     def get_voltage(self) -> float:
         """Measure voltage from SPS
 
@@ -46,7 +59,9 @@ class TeensyController(SerialController):
         float
             Measured voltage in V
         """
-        pass
+        self.ser.write(b"v\n")
+        reply = self.ser.readline()
+        return float(reply)
 
     def get_current(self) -> float:
         """Measure current from SPS
@@ -60,7 +75,22 @@ class TeensyController(SerialController):
         float
             Measured current in V
         """
-        pass
+        self.ser.write(b"i\n")
+        reply = self.ser.readline()
+        return float(reply)
+
+    def check(self):
+        """Performs a check of the connection to the board
+
+        Raises
+        ------
+        RuntimeError
+            Checks that teensy replies "ok" when sent "check"
+        """
+        self.ser.write(b"check\n")
+        reply = self.ser.readline()
+        if (reply != "ok"):
+            raise RuntimeError("Teensy check failed")
 
 
 class SMUController(SerialController):
@@ -119,7 +149,7 @@ if __name__ == "__main__":
 
 
     teensy = TeensyController(args.teensy_port)
-    smu = SMUController(args.smu_port)
+    #smu = SMUController(args.smu_port)
 
     data = {
         "V_in": [],
@@ -135,8 +165,8 @@ if __name__ == "__main__":
         time.sleep(0.001)
 
         # Measure input
-        data["V_in"] = SMUController.get_voltage()
-        data["I_in"] = SMUController.get_current()
+        #data["V_in"] = SMUController.get_voltage()
+        #data["I_in"] = SMUController.get_current()
 
         # Measure SPS output
         data["V_i"] = teensy.get_voltage()
