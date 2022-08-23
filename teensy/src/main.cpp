@@ -9,6 +9,9 @@
 
 #include "Arduino.h"
 
+/** Debug string */
+#define DEBUG_STR "Soil Power Sensor Calibration, compiled on " __DATE__ ", " __TIME__
+
 #ifndef LED_BUILTIN
 #define LED_BUILTIN 13
 #endif
@@ -102,34 +105,61 @@ void setup()
 	Serial.begin(9600);
 	while (!Serial);
 
-	// Bring debug string
-	char debug_str[256];
-	sprintf(debug_str, "Soil Power Sensor Calibration, compiled on %s, %s", __DATE__, __TIME__);
-	Serial.println(debug_str);
-
+	// 
 	// Set ADC to 16 bits
 	analogReadResolution(ADC_READ_RES);
 
 	// initialize LED digital pin as an output.
 	pinMode(LED_BUILTIN, OUTPUT);
 	// turn the LED on (HIGH is the voltage level)
-	digitalWrite(LED_BUILTIN, HIGH);
+	digitalWrite(LED_BUILTIN, LOW);
 }
 
 void loop()
 {
+	// Buffer to store measurements
 	char meas[256];
 
-	meas_t i = {};
-	meas_t v = {};
+	String cmd = Serial.readStringUntil('\n');
+	cmd.trim();
+	cmd.toLowerCase();
 
-	while (i.n < NUM_SAMPLES)
+	if (cmd == "check")
 	{
-		read_voltage(PIN_I, &i);
-		read_voltage(PIN_V, &v);
+		Serial.println("ok");
 	}
+	else if (cmd == "info")
+	{
+		Serial.println(DEBUG_STR);
+	}
+	else if (cmd == "v")
+	{
+		digitalWrite(LED_BUILTIN, HIGH);
 
-	// Print
-	sprintf(meas, "Eff V: %f, I: %f", v.avg, i.avg);
-	Serial.println(meas);
+		meas_t i = {};
+
+		while (i.n < NUM_SAMPLES)
+		{
+			read_voltage(PIN_I, &i);
+		}
+		sprintf(meas, "%f", i.avg);
+		Serial.println(meas);
+
+		digitalWrite(LED_BUILTIN, LOW);
+	}
+	else if (cmd == "i")
+	{
+		digitalWrite(LED_BUILTIN, HIGH);
+
+		meas_t v = {};
+
+		while (v.n < NUM_SAMPLES)
+		{
+			read_voltage(PIN_V, &v);
+		}
+		sprintf(meas, "%f", v.avg);
+		Serial.println(meas);
+		
+		digitalWrite(LED_BUILTIN, LOW);
+	}
 }
