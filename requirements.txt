@@ -203,6 +203,8 @@ pyparsing==3.0.9
     #   packaging
 pyrsistent==0.18.1
     # via jsonschema
+pyserial==3.5
+    # via -r requirements.in
 python-dateutil==2.8.2
     # via
     #   jupyter-client
@@ -253,6 +255,8 @@ tornado==6.2
     #   nbclassic
     #   notebook
     #   terminado
+tqdm==4.64.0
+    # via -r requirements.in
 traitlets==5.3.0
     # via
     #   ipykernel
