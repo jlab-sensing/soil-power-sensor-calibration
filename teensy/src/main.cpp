@@ -33,7 +33,7 @@
 #define PIN_V A15
 
 /** Number of samples to average */
-#define NUM_SAMPLES 10000
+#define NUM_SAMPLES 100
 
 
 typedef struct {
