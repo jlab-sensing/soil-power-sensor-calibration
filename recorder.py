@@ -1,5 +1,28 @@
 #!/usr/bin/env python
 
+"""Data recorder for Soil Power Sensor
+
+The recorder controls the teensy firmware and a Keithley 2400 Source
+Measurement Unit (SMU). Ideally the script should work with any microcontrollre
+flashed with the firmware and any source measurement unit that supports
+Standard Commands for Programable Instruments (SCPI). The units listed are the
+ones that the script was developed and tested on. It allows to step through
+a range of output voltages on the Keithley and measure the voltage and current
+from both the SMU and the Soil Power Sensor (SPS).
+
+Example
+-------
+The following examples shows how to collect data on voltage ranges 0-3.3V
+increasing the voltage by 0.1V every step. The teensy is connected to
+``/dev/ttyACM0`` and the SMu is connected to ``/dev/ttyUSB0``.::
+
+    $ python recorder.py 0 3.3 0.1 /dev/ttyACM0 /dev/ttyACM0
+
+To see a list of all CLI parameters:::
+
+    $ python recorder.py -h
+"""
+
 import pdb
 
 import time
