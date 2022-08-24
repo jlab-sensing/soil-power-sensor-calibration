@@ -30,6 +30,7 @@ import argparse
 import serial
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 
 class SerialController:
@@ -49,7 +50,7 @@ class SerialController:
             Serial port of device
         """
 
-        self.ser = serial.Serial(port)
+        self.ser = serial.Serial(port, timeout=1)
 
     def __del__(self):
         """Destructor
@@ -133,7 +134,74 @@ class SMUController(SerialController):
     for any other SMU that uses SCPI.
     """
 
-    DEFAULT_VOLTAGE = 0
+    class VoltageIterator:
+        """VoltageIterator Class
+
+        Implements a iterator for looping through voltage output values
+        """
+
+        def __init__(self, ser, start, stop, step):
+            """Constructor
+
+            Parameters
+            ----------
+            ser : serial.Serial
+                Initialised serial connection
+            start : float
+                Starting voltage
+            stop : float
+                End voltage
+            step : float
+                Voltage step
+            """
+
+            self.ser = ser
+            self.start = start
+            self.stop = stop
+            self.step = step
+
+
+        def __iter__(self):
+            """Iterator
+
+            Sets current value to start
+            """
+
+            self.v = None
+            self.ser.write(b':OUTP ON\n')
+            return self
+
+
+        def __next__(self):
+            """Next
+
+            Steps to next voltage level, stopping once stop is reached
+
+            Raises
+            ------
+            StopIteration
+                When the next step exceeds the stop level
+            """
+
+            if self.v is None:
+                return self.set_voltage(self.start)
+
+            v_next = self.v + self.step
+
+            if (v_next <= self.stop):
+                return self.set_voltage(v_next)
+            else:
+                raise StopIteration
+
+
+        def set_voltage(self, v):
+            """Sets the voltage output"""
+
+            self.v = v
+            cmd = f":SOUR:VOLT:LEV {v}\n"
+            self.ser.write(bytes(cmd, 'ascii'))
+            return self.v
+
 
     def __init__(self, port):
         """Constructor
@@ -146,10 +214,44 @@ class SMUController(SerialController):
             Serial port of device
         """
 
-        super().__init__(self, port)
+        super().__init__(port)
         # Reset settings
-        self.ser.write(b"*RST")
-        self.ser.write(b"SOURC:FUNC VOLT")
+        self.ser.write(b'*RST\n')
+        # Voltage source
+        self.ser.write(b':SOUR:FUNC VOLT\n')
+        self.ser.write(b':SOUR:VOLT:MODE FIXED\n')
+        # 1mA compliance
+        self.ser.write(b':SENS:CURR:PROT 10e-3\n')
+        # Sensing functions
+        self.ser.write(b':SENS:CURR:RANGE:AUTO ON\n')
+        self.ser.write(b':SENS:FUNC:OFF:ALL\n')
+        self.ser.write(b':SENS:FUNC:ON "VOLT"\n')
+        self.ser.write(b':SENS:FUNC:ON "CURR"\n')
+
+
+    def __del__(self):
+        """Destructor
+
+        Turns off output
+        """
+
+        self.ser.write(b':OUTP OFF\n')
+
+
+    def vrange(self, start, stop, step) -> VoltageIterator:
+        """Gets iterator to range of voltages
+
+        Parameters
+        ----------
+        start : float
+            Starting voltage
+        stop : float
+            End voltage
+        step : float
+            Voltage step
+        """
+
+        return self.VoltageIterator(self.ser, start, stop, step)
 
 
     def get_voltage(self) -> float:
@@ -160,7 +262,13 @@ class SMUController(SerialController):
         float
             Measured voltage
         """
-        pass
+
+        self.ser.write(b':FORM:ELEM VOLT\n')
+        self.ser.write(b':READ?\n')
+        reply = self.ser.readline().decode()
+        reply = reply.strip("\r")
+        return float(reply)
+
 
     def get_current(self) -> float:
         """Measure current supplied to the SPS from SMU
@@ -170,17 +278,12 @@ class SMUController(SerialController):
         float
             Measured current
         """
-        pass
 
-    def set_voltage(self, v):
-        """Set voltage applied to the SPS.
-
-        Parameters
-        ----------
-        v : float
-            New voltage
-        """
-        pass
+        self.ser.write(b':FORM:ELEM CURR\n')
+        self.ser.write(b':READ?\n')
+        reply = self.ser.readline().decode()
+        reply = reply.strip("\r")
+        return float(reply)
 
 
 if __name__ == "__main__":
@@ -199,28 +302,24 @@ if __name__ == "__main__":
 
 
     teensy = TeensyController(args.teensy_port)
-    #smu = SMUController(args.smu_port)
+    smu = SMUController(args.smu_port)
 
     data = {
-        #"V_in": [],
-        #"I_in": [],
+        "V_in": [],
+        "I_in": [],
         "V_i": [],
         "V_2x": []
     }
 
-    for v in np.arange(args.start, args.stop, args.step):
-        # Set voltage
-        #smu.set_voltage(v)
-        # Sleep for 1ms
-        time.sleep(0.001)
+    for v in tqdm(smu.vrange(args.start, args.stop, args.step)):
+        # Measure voltage
+        data["V_in"].append(smu.get_voltage())
+        data["V_2x"].append(teensy.get_voltage())
 
-        # Measure input
-        #data["V_in"] = SMUController.get_voltage()
-        #data["I_in"] = SMUController.get_current()
-
-        # Measure SPS output
-        data["V_i"].append(teensy.get_voltage())
-        data["V_2x"].append(teensy.get_current())
+        # measure current
+        data["I_in"].append(smu.get_current())
+        data["V_i"].append(teensy.get_current())
 
     data_df = pd.DataFrame(data)
+    print(data_df)
     data_df.to_csv(args.data_file, index=False)
