@@ -291,6 +291,13 @@ if __name__ == "__main__":
         for Soil Power Sensor board using serial to control Keithley 2400 SMU and
         teensy""")
 
+    parser.add_argument(
+        "--samples",
+        type=int,
+        default=10,
+        help="Number of samples to takeat each voltage level"
+    )
+
     parser.add_argument("start", type=float, help="Start voltage in V")
     parser.add_argument("stop", type=float, help="End voltage in V")
     parser.add_argument("step", type=float, help="Step between voltages in V")
@@ -305,6 +312,7 @@ if __name__ == "__main__":
     smu = SMUController(args.smu_port)
 
     data = {
+        "V": [],
         "V_in": [],
         "I_in": [],
         "V_i": [],
@@ -312,13 +320,16 @@ if __name__ == "__main__":
     }
 
     for v in tqdm(smu.vrange(args.start, args.stop, args.step)):
-        # Measure voltage
-        data["V_in"].append(smu.get_voltage())
-        data["V_2x"].append(teensy.get_voltage())
+        for _ in range(args.samples):
+            data["V"].append(v)
 
-        # measure current
-        data["I_in"].append(smu.get_current())
-        data["V_i"].append(teensy.get_current())
+            # Measure voltage
+            data["V_in"].append(smu.get_voltage())
+            data["V_2x"].append(teensy.get_voltage())
+
+            # measure current
+            data["I_in"].append(smu.get_current())
+            data["V_i"].append(teensy.get_current())
 
     data_df = pd.DataFrame(data)
     print(data_df)
