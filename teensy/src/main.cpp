@@ -162,4 +162,14 @@ void loop()
 		
 		digitalWrite(LED_BUILTIN, LOW);
 	}
+	else if (cmd == "cont")
+	{
+		for (;;) 
+		{
+			meas_t v = {};
+			read_voltage(PIN_V, &v);
+			sprintf(meas, "%f", v.avg);
+			Serial.println(meas);
+		}
+	}
 }
