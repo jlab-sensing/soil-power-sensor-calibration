@@ -346,7 +346,7 @@ if __name__ == "__main__":
             data["I_in"].append(smu.get_current())
             data["V_i"].append(teensy.get_current())
 
-            data["V"].append(teensy.get_temp())
+            data["T"].append(teensy.get_temp())
 
     data_df = pd.DataFrame(data)
     print(data_df)
