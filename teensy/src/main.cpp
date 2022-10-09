@@ -21,7 +21,8 @@
  * 	v		Measures voltage.
  * 	i		Measures current.
  * 	t		Measures temperature.
- * 	cont	Preform continuous measurements of voltage.
+ * 	cont	Preform continuous measurements of voltage, current, temp in the form "v,c,t"
+ * 	stop	Stop continuous measurements
  */
 
 #include <stdio.h>
@@ -80,7 +81,7 @@ typedef enum
 	/** Measure temperature */
 	TEMP,
 	/** Continuous measurement */
-	CONT
+	CONT,
 } control_states;
 
 /** Current state for control fsm */
@@ -294,6 +295,10 @@ void loop()
 		else if (cmd == "cont")
 		{
 			control_state = CONT;
+		}
+		else if (cmd == "stop")
+		{
+			control_state = IDLE;
 		}
 	}
 
