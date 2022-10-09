@@ -109,6 +109,20 @@ class TeensyController(SerialController):
         reply = reply.strip("\r\n")
         return float(reply)
 
+    def get_temp(self) -> float:
+        """Measure temperature
+
+        Returns
+        -------
+        float
+            Temperature in degrees C
+        """
+        self.ser.write(b"t\n")
+        reply = self.ser.readline()
+        reply = reply.decode()
+        reply = reply.strip("\r\n")
+        return float(reply)
+
     def check(self):
         """Performs a check of the connection to the board
 
@@ -316,7 +330,8 @@ if __name__ == "__main__":
         "V_in": [],
         "I_in": [],
         "V_i": [],
-        "V_2x": []
+        "V_2x": [],
+        "T": [],
     }
 
     for v in tqdm(smu.vrange(args.start, args.stop, args.step)):
@@ -330,6 +345,8 @@ if __name__ == "__main__":
             # measure current
             data["I_in"].append(smu.get_current())
             data["V_i"].append(teensy.get_current())
+
+            data["V"].append(teensy.get_temp())
 
     data_df = pd.DataFrame(data)
     print(data_df)
