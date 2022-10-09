@@ -7,7 +7,9 @@
 
 #include <stdio.h>
 
-#include "Arduino.h"
+#include <Arduino.h>
+
+#include <Adafruit_BME280.h>
 
 /** Debug string */
 #define DEBUG_STR "Soil Power Sensor Calibration, compiled on " __DATE__ ", " __TIME__
@@ -43,6 +45,7 @@ typedef struct {
 	unsigned int n;
 } meas_t;
 
+Adafruit_BME280 bme280;
 
 /**
  * @brief Converts ADC reading to voltage based of reference voltage and ADC
@@ -105,9 +108,23 @@ void setup()
 	Serial.begin(9600);
 	while (!Serial);
 
-	// 
 	// Set ADC to 16 bits
 	analogReadResolution(ADC_READ_RES);
+
+	// Connect to bme280
+	if (!bme280.begin()) {
+		Serial.println("Could not find valid BME280 sensor, check wiring");
+		while (1);
+	}
+
+	// Only measure temperature in forced mode to conserve power
+	bme280.setSampling(
+		Adafruit_BME280::MODE_FORCED,
+		Adafruit_BME280::SAMPLING_X1,
+		Adafruit_BME280::SAMPLING_NONE,
+		Adafruit_BME280::SAMPLING_NONE,
+		Adafruit_BME280::FILTER_OFF
+	);
 
 	// initialize LED digital pin as an output.
 	pinMode(LED_BUILTIN, OUTPUT);
@@ -161,6 +178,14 @@ void loop()
 		Serial.println(meas);
 		
 		digitalWrite(LED_BUILTIN, LOW);
+	}
+	else if (cmd == "t")
+	{
+		// Take measurement and return to sleep
+		bme280.takeForcedMeasurement();
+		float t = bme280.readTemperature();	
+		sprintf(meas, "%f", t);
+		Serial.println(meas);
 	}
 	else if (cmd == "cont")
 	{
