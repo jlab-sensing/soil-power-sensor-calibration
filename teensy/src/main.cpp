@@ -28,6 +28,7 @@
 #include <stdio.h>
 
 #include <Arduino.h>
+#include <Wire.h>
 
 #include <Adafruit_BME280.h>
 
@@ -234,8 +235,7 @@ void setup()
 	if (!bme280.begin())
 	{
 		Serial.println("Could not find valid BME280 sensor, check wiring");
-		while (1)
-			;
+		while (1);
 	}
 
 	// Only measure temperature in forced mode to conserve power
