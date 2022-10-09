@@ -150,19 +150,15 @@ void control_run(void)
 	// Buffer to store measurements
 	char meas[256];
 
-	switch (control_state)
-	{
-	case CHECK:
+	if (control_state == CHECK) {
 		Serial.println("ok");
 		next_state = IDLE;
-		break;
-
-	case INFO:
+	}
+	else if (control_state == INFO) {
 		Serial.println(DEBUG_STR);
 		next_state = IDLE;
-		break;
-
-	case VOLT:
+	}
+	else if (control_state == VOLT) {
 		digitalWrite(LED_BUILTIN, HIGH);
 
 		meas_t v = {};
@@ -177,9 +173,8 @@ void control_run(void)
 		digitalWrite(LED_BUILTIN, LOW);
 
 		next_state = IDLE;
-		break;
-	
-	case CURR:
+	}
+	else if (control_state == CURR) {
 		digitalWrite(LED_BUILTIN, HIGH);
 
 		meas_t i = {};
@@ -194,9 +189,8 @@ void control_run(void)
 		digitalWrite(LED_BUILTIN, LOW);
 
 		next_state = IDLE;
-		break;
-
-	case TEMP:
+	}	
+	if (control_state == TEMP) {
 		// Take measurement and return to sleep
 		bme280.takeForcedMeasurement();
 		float t = bme280.readTemperature();
@@ -204,9 +198,8 @@ void control_run(void)
 		Serial.println(meas);
 
 		next_state = IDLE;
-		break;
-
-	case CONT:
+	}
+	if (control_state == CONT) {
 		meas_t v = {};
 		meas_t i = {};
 		float t;
@@ -222,11 +215,6 @@ void control_run(void)
 
 		sprintf(meas, "%f,%f,%f", v.avg, i.avg, t);
 		Serial.println(meas);
-
-		break;
-
-	default:
-		break;
 	}
 
 	control_state = next_state;
