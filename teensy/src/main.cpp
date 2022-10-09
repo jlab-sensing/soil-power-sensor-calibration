@@ -1,8 +1,27 @@
 /**
- * Blink
+ * @file main.cpp
+ * @date 2022-10-09
+ * @author John Madden (jtmadden@ucsc.edu)
+ * 
+ * Main executable for Soil Power Sensor Firmware
  *
- * Turns on an LED on for one second,
- * then off for one second, repeatedly.
+ * The firmware handles the conversion from analog signals to digital values.
+ * Voltage, current and temperature can be measured using serial commands. For
+ * temperature measurements, the BME280 sensor must be connected via I2C. The
+ * voltage and current values are averaged over #NUM_SAMPLES.
+ * 
+ * The serial commands being sent to the teensy must end with "\n" character
+ * making it compatable with "\n" or "\r\n" line endings. The returned serial
+ * value always will end with "\r\n" as described in the Arduino
+ * Serial.println() command.
+ * 
+ * Commands:
+ * 	check	Checks the connection to the firmware. Returns "ok".
+ * 	info	Gets compiler info for version of firmware.
+ * 	v		Measures voltage.
+ * 	i		Measures current. 
+ * 	t		Measures temperature.
+ * 	cont	Preform continuous measurements of voltage.
  */
 
 #include <stdio.h>
