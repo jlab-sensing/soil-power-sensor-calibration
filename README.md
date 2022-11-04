@@ -1,6 +1,6 @@
 # Soil Power Sensor Calibration
 
-Jupyter Notebook for calibrating Soil Power Sensors. This README only covers how to install the necessary packages and setup the Jupyter Notebook server. The remaining documentation is contained within the notebook `calibration.ipynb`.
+Jupyter Notebook for calibrating Soil Power Sensors. The design files are available on Github, https://github.com/gemarcano/soil_power_sensor. This README only covers how to install the necessary packages and setup the Jupyter Notebook server. The remaining documentation is contained within the notebook `calibration.ipynb`.
 
 ## Usage
 
@@ -8,9 +8,9 @@ Jupyter Notebook for calibrating Soil Power Sensors. This README only covers how
 
 ```
 python3 -m venv .venv
-*Mac OS/Linux*
+# Unix
 source .venv/bin/activate
-*Windows*
+# Windows
 .\venv\Scripts\activate
 ```
 
