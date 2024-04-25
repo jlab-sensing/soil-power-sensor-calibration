@@ -1,0 +1,8 @@
+# Date the data was recorded
+date: 2022-07-21
+# Measured sensing resistor value in ohms
+r_sense: 100
+# Gain settings, valid options are [10, 100]
+gain: 100
+# Ref Select setting, valid options are ["bidirectional", "unidirection"]
+ref: "unidirectional"
