@@ -31,9 +31,10 @@ import socket
 import serial
 import numpy as np
 import pandas as pd
+import pdb
 from tqdm import tqdm
 from typing import Tuple
-from soil_power_sensor_protobuf import encode, decode
+from soil_power_sensor_protobuf import decode_measurement
 
 
 class SerialController:
@@ -42,7 +43,7 @@ class SerialController:
     # Serial port
     ser = None
 
-    def __init__(self, port):
+    def __init__(self, port, baudrate=115200, xonxoff=True):
         """Constructor
 
         Initialises connection to serial port.
@@ -51,9 +52,24 @@ class SerialController:
         ----------
         port : str
             Serial port of device
+        baudrate : int, optional
+            Baud rate for serial communication (default is 115200, STM32 functions at 115200)
+        xonxoff  : bool, optional
+            Flow control (default is on)
         """
 
-        self.ser = serial.Serial(port, timeout=1)
+        self.ser = serial.Serial(port, baudrate=baudrate, xonxoff=xonxoff, timeout=1)
+        # Print serial port settings
+        print("Serial Port Settings:")
+        print("Port:", self.ser.port)
+        print("Baudrate:", self.ser.baudrate)
+        print("Byte size:", self.ser.bytesize)
+        print("Parity:", self.ser.parity)
+        print("Stop bits:", self.ser.stopbits)
+        print("Timeout:", self.ser.timeout)
+        print("Xon/Xoff:", self.ser.xonxoff)
+        print("Rts/cts:", self.ser.rtscts)
+        print("Dsr/dtr:", self.ser.dsrdtr)
 
     def __del__(self):
         """Destructor
@@ -118,11 +134,16 @@ class SoilPowerSensorController(SerialController):
             voltage, current
         """
         self.ser.write(b"0\n") # send a command to the SPS to send a power measurment
+        response_size = self.ser.readline() # read the size of the encoded measurment
+        response_size = response_size.decode()
+        response_size = response_size.strip()
+        #pdb.set_trace()
         reply = self.ser.readline() # read said measurment
-        reply = reply.decode() # turn it into a regular python string and strip it
-        reply = reply.strip("\r\n")
+        pdb.set_trace()
+        #reply = reply.decode() # turn it into a regular python string and strip it
+        reply = reply.strip("\n")
 
-        meas_dict = decode(reply) # decode using protobuf
+        meas_dict = decode_measurement(reply) # decode using protobuf
         voltage_value = meas_dict["data"]["voltage"]
         current_value = meas_dict["data"]["current"]
 
@@ -138,10 +159,10 @@ class SoilPowerSensorController(SerialController):
         """
         self.ser.write(b"check\n")
         reply = self.ser.readline()
-        reply = reply.decode()
-        reply = reply.strip("\r\n")
-        if (reply != "ok"):
-            raise RuntimeError("SPS check failed")
+        #reply = reply.decode()
+        #reply = reply.strip("\r\n")
+        if (reply != b'ok\n'):
+            raise RuntimeError(f"SPS check failed. Reply received: {reply}")
 
 
 class SMUSerialController(SerialController):
@@ -334,7 +355,7 @@ class SMULANController(LANController):
                 Voltage step
             """
 
-            self.ser = sock
+            self.sock = sock
             self.start = start
             self.stop = stop
             self.step = step
@@ -395,7 +416,7 @@ class SMULANController(LANController):
             Port number used for the LAN connection
         """
 
-        super().__init__(port)
+        super().__init__(host, port)
         # Reset settings
         self.sock.sendall(b'*RST\n')
         # Voltage source
@@ -446,7 +467,7 @@ class SMULANController(LANController):
 
         self.sock.sendall(b':FORM:ELEM VOLT\n')
         self.sock.sendall(b':READ?\n')
-        reply = self.sock.recv()
+        reply = self.sock.recv(256)
         reply = reply.strip("\r")
         return float(reply)
 
@@ -483,7 +504,7 @@ if __name__ == "__main__":
     parser.add_argument("step", type=float, help="Step between voltages in V")
     parser.add_argument("smu_port", type=str, help="SMU serial port (if SMU is configured to serial)")
     parser.add_argument("smu_host", type=str, help="SMU IP address (if SMU is configured to LAN)")
-    parser.add_argument("smu_lan_port", type=str, help="SMU LAN port (if SMU is configured to LAN)")
+    parser.add_argument("smu_lan_port", type=int, help="SMU LAN port (if SMU is configured to LAN)")
     parser.add_argument("sps_port", type=str, help="SPS serial port")
     parser.add_argument("data_file", type=str, help="Path to store data file")
 

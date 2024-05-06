@@ -32,7 +32,7 @@ def ping_smu(host, port):
 
 if __name__ == "__main__":
     # Specify the IP address or hostname of the SMU and its port
-    smu_host = "128.114.204.200"  # Replace with the actual IP address or hostname of the SMU
+    smu_host = "128.114.204.83"  # Replace with the actual IP address or hostname of the SMU
     smu_port = 23  # Replace with the actual port used by the SMU
     
     # Ping the SMU
