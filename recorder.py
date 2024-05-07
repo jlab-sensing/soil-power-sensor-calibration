@@ -43,7 +43,7 @@ class SerialController:
     # Serial port
     ser = None
 
-    def __init__(self, port, baudrate=115200, xonxoff=True):
+    def __init__(self, port, baudrate=115200, xonxoff=False):
         """Constructor
 
         Initialises connection to serial port.
@@ -133,15 +133,14 @@ class SoilPowerSensorController(SerialController):
         tuple[float, float]
             voltage, current
         """
+        
         self.ser.write(b"0\n") # send a command to the SPS to send a power measurment
-        response_size = self.ser.readline() # read the size of the encoded measurment
-        response_size = response_size.decode()
-        response_size = response_size.strip()
-        #pdb.set_trace()
-        reply = self.ser.readline() # read said measurment
-        pdb.set_trace()
-        #reply = reply.decode() # turn it into a regular python string and strip it
-        reply = reply.strip("\n")
+
+        # read a single byte for the length
+        resp_len_bytes = self.ser.read()
+        resp_len = int.from_bytes(resp_len_bytes)
+
+        reply = self.ser.read(resp_len) # read said measurment
 
         meas_dict = decode_measurement(reply) # decode using protobuf
         voltage_value = meas_dict["data"]["voltage"]
